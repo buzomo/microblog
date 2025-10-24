@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>マイクロブログ</title>
+    <link rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📝%3C/text%3E%3C/svg%3E"
+      type="image/svg+xml">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,6 +14,14 @@
             margin: 0 auto;
             padding: 20px;
             position: relative;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.5s ease;
+        }
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #ddd;
         }
         #input-area {
             margin-bottom: 20px;
@@ -19,17 +30,20 @@
             width: 100%;
             padding: 10px;
             font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
         }
         #posts {
             list-style: none;
             padding: 0;
         }
         .post {
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-color);
             padding: 10px;
             margin-bottom: 10px;
             border-radius: 5px;
             position: relative;
+            background-color: rgba(255, 255, 255, 0.7);
         }
         .post:hover::after {
             content: attr(data-time);
@@ -41,24 +55,29 @@
         }
         #copy-url-btn, #download-csv-btn {
             position: fixed;
-            padding: 10px 15px;
-            background-color: #007BFF;
-            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
             border: none;
-            border-radius: 5px;
             cursor: pointer;
             z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            background-color: rgba(255, 255, 255, 0.8);
         }
         #copy-url-btn {
-            bottom: 60px;
+            bottom: 70px;
             right: 20px;
         }
         #download-csv-btn {
-            bottom: 20px;
+            bottom: 10px;
             right: 20px;
         }
         #copy-url-btn:hover, #download-csv-btn:hover {
-            background-color: #0056b3;
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -67,10 +86,33 @@
         <input type="text" id="post-input" placeholder="つぶやきを入力..." autocomplete="off">
     </div>
     <ul id="posts"></ul>
-    <button id="copy-url-btn">URLをコピー</button>
-    <button id="download-csv-btn">データをダウンロード</button>
-
+    <button id="copy-url-btn" title="URLをコピー">🔗</button>
+    <button id="download-csv-btn" title="データをダウンロード">📥</button>
     <script>
+        // パステルカラーの配列
+        const pastelColors = [
+            '#FFD1DC', // パステルピンク
+            '#FFE4B5', // パステルイエロー
+            '#E6E6FA', // パステルラベンダー
+            '#B5EAD7', // パステルグリーン
+            '#FFB6C1', // パステルレッド
+            '#E0FFFF', // パステルブルー
+            '#F0E68C'  // パステルオレンジ
+        ];
+
+        // ランダムなパステルカラーを適用
+        function applyRandomPastelColor() {
+            const randomColor = pastelColors[Math.floor(Math.random() * pastelColors.length)];
+            document.documentElement.style.setProperty('--bg-color', randomColor);
+            // テキストカラーは暗めに設定
+            document.documentElement.style.setProperty('--text-color', '#333333');
+            // ボーダーカラーは少し暗めに
+            document.documentElement.style.setProperty('--border-color', '#ccc');
+        }
+
+        // ページロード時にランダムなパステルカラーを適用
+        window.addEventListener('load', applyRandomPastelColor);
+
         const input = document.getElementById('post-input');
         const postsList = document.getElementById('posts');
         const copyUrlBtn = document.getElementById('copy-url-btn');
@@ -109,19 +151,15 @@
                 renderPosts(allPosts);
                 return;
             }
-
             function kanaConvert(s) {
                 return s.replace(/[ァ-ヴ]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60));
             }
-
             function widthConvert(s) {
                 return s.replace(/[Ａ-Ｚａ-ｚ０-９]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0));
             }
-
             function caseConvert(s) {
                 return s.toLowerCase();
             }
-
             const convertedQuery = caseConvert(widthConvert(kanaConvert(query)));
             const filtered = allPosts.filter(post =>
                 caseConvert(widthConvert(kanaConvert(post.content))).includes(convertedQuery)
