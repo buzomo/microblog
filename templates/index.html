@@ -104,9 +104,7 @@
         function applyRandomPastelColor() {
             const randomColor = pastelColors[Math.floor(Math.random() * pastelColors.length)];
             document.documentElement.style.setProperty('--bg-color', randomColor);
-            // テキストカラーは暗めに設定
             document.documentElement.style.setProperty('--text-color', '#333333');
-            // ボーダーカラーは少し暗めに
             document.documentElement.style.setProperty('--border-color', '#ccc');
         }
 
@@ -119,9 +117,12 @@
         const downloadCsvBtn = document.getElementById('download-csv-btn');
         let allPosts = [];
 
+        // URLパラメータを取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const postOnlyMode = urlParams.get('postonly') === 'yes';
+
         // トークン取得関数
         function getTokenFromCookie() {
-            const urlParams = new URLSearchParams(window.location.search);
             const urlToken = urlParams.get('token');
             if (urlToken) {
                 return urlToken;
@@ -133,6 +134,9 @@
 
         // 全件取得関数
         async function fetchAllPosts() {
+            if (postOnlyMode) {
+                return;
+            }
             const response = await fetch('/search?q=');
             allPosts = await response.json();
             renderPosts(allPosts);
@@ -147,8 +151,10 @@
 
         // ローカル絞り込み関数
         function filterPosts(query) {
-            if (!query) {
-                renderPosts(allPosts);
+            if (postOnlyMode || !query) {
+                if (!postOnlyMode) {
+                    renderPosts(allPosts);
+                }
                 return;
             }
             function kanaConvert(s) {
@@ -176,14 +182,16 @@
                 },
                 body: JSON.stringify({ content }),
             });
-            await fetchAllPosts();
+            if (!postOnlyMode) {
+                await fetchAllPosts();
+            }
             input.value = '';
         }
 
         // URLコピー関数
         function copyUrlWithToken() {
             const token = getTokenFromCookie();
-            const url = `${window.location.origin}?token=${token}`;
+            const url = `${window.location.origin}${postOnlyMode ? '?postonly=yes&' : '?'}token=${token}`;
             navigator.clipboard.writeText(url)
                 .then(() => alert('URLをコピーしました！'))
                 .catch(err => console.error('コピーに失敗しました:', err));
@@ -191,6 +199,10 @@
 
         // CSVダウンロード関数
         function downloadCsv() {
+            if (postOnlyMode) {
+                alert('投稿専用モードではデータをダウンロードできません。');
+                return;
+            }
             const csvHeader = ['タイムスタンプ,メモ内容'];
             const csvRows = allPosts.map(post =>
                 `"${new Date(post.created_at).toLocaleString()}","${post.content.replace(/"/g, '""')}"`
@@ -225,9 +237,10 @@
         downloadCsvBtn.addEventListener('click', downloadCsv);
 
         // 初期表示
-        fetchAllPosts().then(() => {
-            input.focus();
-        });
+        if (!postOnlyMode) {
+            fetchAllPosts();
+        }
+        input.focus();
     </script>
 </body>
 </html>
