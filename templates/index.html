@@ -1,13 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>マイクロブログ</title>
-      <link rel="icon"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐤%3C/text%3E%3C/svg%3E"
-    type="image/svg+xml">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,22 +12,18 @@
             padding: 20px;
             position: relative;
         }
-
         #input-area {
             margin-bottom: 20px;
         }
-
         #post-input {
             width: 100%;
             padding: 10px;
             font-size: 16px;
         }
-
         #posts {
             list-style: none;
             padding: 0;
         }
-
         .post {
             border: 1px solid #ddd;
             padding: 10px;
@@ -39,7 +31,6 @@
             border-radius: 5px;
             position: relative;
         }
-
         .post:hover::after {
             content: attr(data-time);
             position: absolute;
@@ -48,11 +39,8 @@
             font-size: 12px;
             color: #666;
         }
-
-        #copy-url-btn {
+        #copy-url-btn, #download-csv-btn {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
             padding: 10px 15px;
             background-color: #007BFF;
             color: white;
@@ -61,40 +49,45 @@
             cursor: pointer;
             z-index: 1000;
         }
-
-        #copy-url-btn:hover {
+        #copy-url-btn {
+            bottom: 60px;
+            right: 20px;
+        }
+        #download-csv-btn {
+            bottom: 20px;
+            right: 20px;
+        }
+        #copy-url-btn:hover, #download-csv-btn:hover {
             background-color: #0056b3;
         }
     </style>
 </head>
-
 <body>
     <div id="input-area">
         <input type="text" id="post-input" placeholder="つぶやきを入力..." autocomplete="off">
     </div>
     <ul id="posts"></ul>
     <button id="copy-url-btn">URLをコピー</button>
+    <button id="download-csv-btn">データをダウンロード</button>
 
     <script>
         const input = document.getElementById('post-input');
         const postsList = document.getElementById('posts');
         const copyUrlBtn = document.getElementById('copy-url-btn');
+        const downloadCsvBtn = document.getElementById('download-csv-btn');
         let allPosts = [];
 
         // トークン取得関数
         function getTokenFromCookie() {
-            // URLパラメータからトークンを取得
             const urlParams = new URLSearchParams(window.location.search);
             const urlToken = urlParams.get('token');
             if (urlToken) {
                 return urlToken;
             }
-            // Cookieからトークンを取得
             const cookies = document.cookie.split(';').map(cookie => cookie.trim());
             const tokenCookie = cookies.find(cookie => cookie.startsWith('token='));
             return tokenCookie ? tokenCookie.split('=')[1] : '';
         }
-
 
         // 全件取得関数
         async function fetchAllPosts() {
@@ -117,17 +110,14 @@
                 return;
             }
 
-            // カタカナ⇄ひらがな変換
             function kanaConvert(s) {
                 return s.replace(/[ァ-ヴ]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60));
             }
 
-            // 全角⇄半角変換
             function widthConvert(s) {
                 return s.replace(/[Ａ-Ｚａ-ｚ０-９]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0));
             }
 
-            // 大文字⇄小文字変換
             function caseConvert(s) {
                 return s.toLowerCase();
             }
@@ -148,7 +138,7 @@
                 },
                 body: JSON.stringify({ content }),
             });
-            await fetchAllPosts(); // 投稿後に全件再取得
+            await fetchAllPosts();
             input.value = '';
         }
 
@@ -159,6 +149,23 @@
             navigator.clipboard.writeText(url)
                 .then(() => alert('URLをコピーしました！'))
                 .catch(err => console.error('コピーに失敗しました:', err));
+        }
+
+        // CSVダウンロード関数
+        function downloadCsv() {
+            const csvHeader = ['タイムスタンプ,メモ内容'];
+            const csvRows = allPosts.map(post =>
+                `"${new Date(post.created_at).toLocaleString()}","${post.content.replace(/"/g, '""')}"`
+            );
+            const csvContent = [...csvHeader, ...csvRows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'microblog_export.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // 入力イベント（ローカル絞り込み）
@@ -176,11 +183,13 @@
         // ボタンクリックでURLコピー
         copyUrlBtn.addEventListener('click', copyUrlWithToken);
 
+        // ボタンクリックでCSVダウンロード
+        downloadCsvBtn.addEventListener('click', downloadCsv);
+
         // 初期表示
         fetchAllPosts().then(() => {
-            input.focus(); // 入力フィールドにフォーカス
+            input.focus();
         });
     </script>
 </body>
-
 </html>
