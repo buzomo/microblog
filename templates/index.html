@@ -7,7 +7,7 @@
     <link rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📝%3C/text%3E%3C/svg%3E"
       type="image/svg+xml">
-  <style>
+ <style>
     body {
         font-family: Arial, sans-serif;
         max-width: 600px;
@@ -34,9 +34,8 @@
             --button-bg-color: rgba(50, 50, 50, 0.8);
         }
     }
-    #input-area {
-        margin-bottom: 20px;
-    }
+    /* 以下、既存のCSSはそのまま */
+    #input-area { margin-bottom: 20px; }
     #post-input {
         width: calc(100% - 24px);
         padding: 10px;
@@ -46,10 +45,7 @@
         color: var(--text-color);
         border: 1px solid var(--border-color);
     }
-    #posts {
-        list-style: none;
-        padding: 0;
-    }
+    #posts { list-style: none; padding: 0; }
     .post {
         border: 1px solid var(--border-color);
         padding: 10px;
@@ -83,18 +79,9 @@
         background-color: var(--button-bg-color);
         color: var(--text-color);
     }
-    #copy-url-btn {
-        bottom: 70px;
-        right: 20px;
-    }
-    #download-csv-btn {
-        bottom: 10px;
-        right: 20px;
-    }
-    #copy-url-btn:hover, #download-csv-btn:hover {
-        opacity: 0.8;
-    }
-    /* モーダルスタイル */
+    #copy-url-btn { bottom: 70px; right: 20px; }
+    #download-csv-btn { bottom: 10px; right: 20px; }
+    #copy-url-btn:hover, #download-csv-btn:hover { opacity: 0.8; }
     .modal {
         display: none;
         position: fixed;
@@ -115,20 +102,9 @@
         text-align: center;
         color: var(--text-color);
     }
-    .close {
-        color: #aaa;
-        float: right;
-        font-size: 28px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-    .close:hover {
-        color: var(--text-color);
-    }
-    #qrcode {
-        margin: 10px auto;
-        max-width: 200px;
-    }
+    .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+    .close:hover { color: var(--text-color); }
+    #qrcode { margin: 10px auto; max-width: 200px; }
 </style>
 
 </head>
@@ -151,22 +127,22 @@
     </div>
 
     <script>
-        // パステルカラーの配列
-        const pastelColors = [
-            '#FFD1DC', // パステルピンク
-            '#FFE4B5', // パステルイエロー
-            '#E6E6FA', // パステルラベンダー
-            '#B5EAD7', // パステルグリーン
-            '#FFB6C1', // パステルレッド
-            '#E0FFFF', // パステルブルー
-            '#F0E68C'  // パステルオレンジ
+      // パステルカラーの配列（ライトモード用）
+        const lightPastelColors = [
+            '#FFD1DC', '#FFE4B5', '#E6E6FA', '#B5EAD7', '#FFB6C1', '#E0FFFF', '#F0E68C'
+        ];
+        // ダークモード用パステルカラー
+        const darkPastelColors = [
+            '#4A2D3A', '#4A412A', '#3A3A4A', '#2D4A3A', '#4A2D2D', '#2D3A4A', '#4A3A2D'
         ];
         // ランダムなパステルカラーを適用
         function applyRandomPastelColor() {
+            const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const pastelColors = isDarkMode ? darkPastelColors : lightPastelColors;
             const randomColor = pastelColors[Math.floor(Math.random() * pastelColors.length)];
             document.documentElement.style.setProperty('--bg-color', randomColor);
-            document.documentElement.style.setProperty('--text-color', '#333333');
-            document.documentElement.style.setProperty('--border-color', '#ccc');
+            document.documentElement.style.setProperty('--text-color', isDarkMode ? '#f0f0f0' : '#333333');
+            document.documentElement.style.setProperty('--border-color', isDarkMode ? '#555' : '#ccc');
         }
         // ページロード時にランダムなパステルカラーを適用
         window.addEventListener('load', applyRandomPastelColor);
