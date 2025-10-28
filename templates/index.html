@@ -7,113 +7,130 @@
     <link rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📝%3C/text%3E%3C/svg%3E"
       type="image/svg+xml">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            transition: background-color 0.5s ease;
-        }
+  <style>
+    body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        position: relative;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        transition: background-color 0.5s ease, color 0.5s ease;
+    }
+    :root {
+        --bg-color: #ffffff;
+        --text-color: #333333;
+        --border-color: #ddd;
+        --post-bg-color: rgba(255, 255, 255, 0.7);
+        --button-bg-color: rgba(255, 255, 255, 0.8);
+    }
+    @media (prefers-color-scheme: dark) {
         :root {
-            --bg-color: #ffffff;
-            --text-color: #333333;
-            --border-color: #ddd;
+            --bg-color: #121212;
+            --text-color: #f0f0f0;
+            --border-color: #444;
+            --post-bg-color: rgba(30, 30, 30, 0.7);
+            --button-bg-color: rgba(50, 50, 50, 0.8);
         }
-        #input-area {
-            margin-bottom: 20px;
-        }
-        #post-input {
-            width: calc(100% - 24px);
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 5px;
-        }
-        #posts {
-            list-style: none;
-            padding: 0;
-        }
-        .post {
-            border: 1px solid var(--border-color);
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            position: relative;
-            background-color: rgba(255, 255, 255, 0.7);
-        }
-        .post:hover::after {
-            content: attr(data-time);
-            position: absolute;
-            right: 10px;
-            top: 5px;
-            font-size: 12px;
-            color: #666;
-        }
-        #copy-url-btn, #download-csv-btn {
-            position: fixed;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            background-color: rgba(255, 255, 255, 0.8);
-        }
-        #copy-url-btn {
-            bottom: 70px;
-            right: 20px;
-        }
-        #download-csv-btn {
-            bottom: 10px;
-            right: 20px;
-        }
-        #copy-url-btn:hover, #download-csv-btn:hover {
-            opacity: 0.8;
-            
-        }
-        /* モーダルスタイル */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 500px;
-            text-align: center;
-        }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .close:hover {
-            color: #333;
-        }
-        #qrcode {
-            margin: 10px auto;
-            max-width: 200px;
-        }
-    </style>
+    }
+    #input-area {
+        margin-bottom: 20px;
+    }
+    #post-input {
+        width: calc(100% - 24px);
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 5px;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+    }
+    #posts {
+        list-style: none;
+        padding: 0;
+    }
+    .post {
+        border: 1px solid var(--border-color);
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        position: relative;
+        background-color: var(--post-bg-color);
+        color: var(--text-color);
+    }
+    .post:hover::after {
+        content: attr(data-time);
+        position: absolute;
+        right: 10px;
+        top: 5px;
+        font-size: 12px;
+        color: #aaa;
+    }
+    #copy-url-btn, #download-csv-btn {
+        position: fixed;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        background-color: var(--button-bg-color);
+        color: var(--text-color);
+    }
+    #copy-url-btn {
+        bottom: 70px;
+        right: 20px;
+    }
+    #download-csv-btn {
+        bottom: 10px;
+        right: 20px;
+    }
+    #copy-url-btn:hover, #download-csv-btn:hover {
+        opacity: 0.8;
+    }
+    /* モーダルスタイル */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+    }
+    .modal-content {
+        background-color: var(--bg-color);
+        margin: 15% auto;
+        padding: 20px;
+        border-radius: 10px;
+        width: 80%;
+        max-width: 500px;
+        text-align: center;
+        color: var(--text-color);
+    }
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .close:hover {
+        color: var(--text-color);
+    }
+    #qrcode {
+        margin: 10px auto;
+        max-width: 200px;
+    }
+</style>
+
 </head>
 <body>
     <div id="input-area">
