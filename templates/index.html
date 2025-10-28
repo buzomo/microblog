@@ -78,6 +78,40 @@
         #copy-url-btn:hover, #download-csv-btn:hover {
             opacity: 0.8;
         }
+        /* モーダルスタイル */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #333;
+        }
+        #qrcode {
+            margin: 10px auto;
+            max-width: 200px;
+        }
     </style>
 </head>
 <body>
@@ -85,8 +119,19 @@
         <input type="text" id="post-input" placeholder="つぶやきを入力..." autocomplete="off">
     </div>
     <ul id="posts"></ul>
-    <button id="copy-url-btn" title="URLをコピー">🔗</button>
+    <button id="copy-url-btn" title="URLを表示">🔗</button>
     <button id="download-csv-btn" title="データをダウンロード">📥</button>
+
+    <!-- モーダル -->
+    <div id="urlModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>共有用URL</h3>
+            <a id="shareUrl" target="_blank" style="word-break: break-all;"></a>
+            <div id="qrcode"></div>
+        </div>
+    </div>
+
     <script>
         // パステルカラーの配列
         const pastelColors = [
@@ -98,7 +143,6 @@
             '#E0FFFF', // パステルブルー
             '#F0E68C'  // パステルオレンジ
         ];
-
         // ランダムなパステルカラーを適用
         function applyRandomPastelColor() {
             const randomColor = pastelColors[Math.floor(Math.random() * pastelColors.length)];
@@ -106,20 +150,19 @@
             document.documentElement.style.setProperty('--text-color', '#333333');
             document.documentElement.style.setProperty('--border-color', '#ccc');
         }
-
         // ページロード時にランダムなパステルカラーを適用
         window.addEventListener('load', applyRandomPastelColor);
-
         const input = document.getElementById('post-input');
         const postsList = document.getElementById('posts');
         const copyUrlBtn = document.getElementById('copy-url-btn');
         const downloadCsvBtn = document.getElementById('download-csv-btn');
+        const modal = document.getElementById('urlModal');
+        const span = document.getElementsByClassName('close')[0];
+        const shareUrlElement = document.getElementById('shareUrl');
         let allPosts = [];
-
         // URLパラメータを取得
         const urlParams = new URLSearchParams(window.location.search);
         const postOnlyMode = urlParams.get('postonly') === 'yes';
-
         // トークン取得関数
         function getTokenFromCookie() {
             const urlToken = urlParams.get('token');
@@ -130,7 +173,6 @@
             const tokenCookie = cookies.find(cookie => cookie.startsWith('token='));
             return tokenCookie ? tokenCookie.split('=')[1] : '';
         }
-
         // 全件取得関数
         async function fetchAllPosts() {
             if (postOnlyMode) {
@@ -140,14 +182,12 @@
             allPosts = await response.json();
             renderPosts(allPosts);
         }
-
         // つぶやき表示関数
         function renderPosts(posts) {
             postsList.innerHTML = posts.map(post =>
                 `<li class="post" data-time="${new Date(post.created_at).toLocaleString()}">${post.content}</li>`
             ).join('');
         }
-
         // ローカル絞り込み関数
         function filterPosts(query) {
             if (postOnlyMode || !query) {
@@ -171,7 +211,6 @@
             );
             renderPosts(filtered);
         }
-
         // 投稿関数
         async function postContent(content) {
             await fetch('/post', {
@@ -186,16 +225,15 @@
             }
             input.value = '';
         }
-
-        // URLコピー関数
-        function copyUrlWithToken() {
+        // URL表示関数
+        function showUrlWithToken() {
             const token = getTokenFromCookie();
             const url = `${window.location.origin}${postOnlyMode ? '?postonly=yes&' : '?'}token=${token}`;
-            navigator.clipboard.writeText(url)
-                .then(() => alert('URLをコピーしました！'))
-                .catch(err => console.error('コピーに失敗しました:', err));
+            shareUrlElement.href = url;
+            shareUrlElement.textContent = url;
+            document.getElementById('qrcode').innerHTML = `<img src="https://idy.vercel.app/q/${encodeURIComponent(url)}" alt="QRコード" style="max-width: 200px;">`;
+            modal.style.display = 'block';
         }
-
         // CSVダウンロード関数
         function downloadCsv() {
             if (postOnlyMode) {
@@ -216,25 +254,30 @@
             link.click();
             document.body.removeChild(link);
         }
-
         // 入力イベント（ローカル絞り込み）
         input.addEventListener('input', (e) => {
             filterPosts(e.target.value);
         });
-
         // Enterキーで投稿
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && input.value.trim()) {
                 postContent(input.value.trim());
             }
         });
-
-        // ボタンクリックでURLコピー
-        copyUrlBtn.addEventListener('click', copyUrlWithToken);
-
+        // ボタンクリックでURL表示
+        copyUrlBtn.addEventListener('click', showUrlWithToken);
         // ボタンクリックでCSVダウンロード
         downloadCsvBtn.addEventListener('click', downloadCsv);
-
+        // モーダルを閉じる
+        span.onclick = function() {
+            modal.style.display = 'none';
+        }
+        // モーダル外をクリックで閉じる
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
         // 初期表示
         if (!postOnlyMode) {
             fetchAllPosts();
