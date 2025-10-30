@@ -304,6 +304,13 @@
                 input.value = '';
                 input.disabled = true;
                 isPosting = true;
+                // フロント側でダミー投稿を先頭に即時追加
+                const dummyPost = {
+                    content: content,
+                    created_at: new Date().toISOString()
+                };
+                allPosts = [dummyPost, ...allPosts];
+                renderPosts(allPosts);
                 try {
                     await postContent(content);
                 } finally {
