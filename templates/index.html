@@ -245,9 +245,22 @@
                 return s.toLowerCase();
             }
             const convertedQuery = caseConvert(widthConvert(kanaConvert(query)));
-            const filtered = allPosts.filter(post =>
-                caseConvert(widthConvert(kanaConvert(post.content))).includes(convertedQuery)
-            );
+            const filtered = allPosts.filter(post => {
+                // =で分割、両端＋本文も含めてエイリアス配列化
+                let aliasList = [post.content];
+                if (post.content.includes('=')) {
+                    const eqParts = post.content.split('=');
+                    // 両端＆両端trim/正規化も候補に
+                    if (eqParts.length === 2) {
+                        aliasList.push(eqParts[0].trim());
+                        aliasList.push(eqParts[1].trim());
+                    }
+                }
+                // すべてのエイリアス化語句で判定
+                return aliasList.some(str =>
+                    caseConvert(widthConvert(kanaConvert(str))).includes(convertedQuery)
+                );
+            });
             renderPosts(filtered);
         }
         // 投稿関数
