@@ -244,28 +244,47 @@
             function caseConvert(s) {
                 return s.toLowerCase();
             }
-            const normalize = s => caseConvert(widthConvert(kanaConvert(s.trim())));
-            const convertedQuery = normalize(query);
-            const filtered = allPosts.filter(post => {
-                let aliasList = [post.content];
+            const normalize = s => caseConvert(widthConvert(kanaConvert((s || '').trim())));
 
-                // エイリアス候補を文章から抽出
-                const m = post.content.match(/^([^[=\s]+)\s*=\s*([^=\s]+)(.*)$/);
+            // ↓まず全エイリアス辞書を生成（双方向）
+            const aliasMap = {};
+            allPosts.forEach(post => {
+                let m = post.content.match(/^([^[=\s]+)\s*=\s*([^=\s]+)$/);
                 if (m) {
-                    const a1 = m[1] || '';
-                    const a2 = m[2] || '';
-                    aliasList.push(a1);
-                    aliasList.push(a2);
+                    let a = normalize(m[1]), b = normalize(m[2]);
+                    aliasMap[a] = b;
+                    aliasMap[b] = a;
                 } else if (post.content.includes('=')) {
-                    // 複雑/イレギュラーな場合でも一応split
                     const eqParts = post.content.split('=');
-                    if (eqParts.length >= 2) {
-                        aliasList.push(eqParts[0].trim());
-                        aliasList.push(eqParts[1].trim());
+                    if (eqParts.length === 2) {
+                        let a = normalize(eqParts[0]), b = normalize(eqParts[1]);
+                        aliasMap[a] = b;
+                        aliasMap[b] = a;
                     }
                 }
-                // 正規化後で部分一致チェック
-                return aliasList.some(str => normalize(str).includes(convertedQuery));
+            });
+
+            // クエリのエイリアス展開
+            const queries = [normalize(query)];
+            if (aliasMap[queries[0]]) {
+                queries.push(aliasMap[queries[0]]);
+            }
+
+            const filtered = allPosts.filter(post => {
+                // 本文とイコール分岐ワードたち
+                let aliasList = [post.content];
+                let m = post.content.match(/^([^[=\s]+)\s*=\s*([^=\s]+)$/);
+                if (m) {
+                    aliasList.push(m[1]);
+                    aliasList.push(m[2]);
+                } else if (post.content.includes('=')) {
+                    const eqParts = post.content.split('=');
+                    if (eqParts.length === 2) {
+                        aliasList.push(eqParts[0]);
+                        aliasList.push(eqParts[1]);
+                    }
+                }
+                return queries.some(q => aliasList.some(str => normalize(str).includes(q)));
             });
             renderPosts(filtered);
         }
