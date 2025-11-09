@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +18,6 @@
             color: var(--text-color);
             transition: background-color 0.5s ease, color 0.5s ease;
         }
-
         :root {
             --bg-color: #ffffff;
             --text-color: #333333;
@@ -27,7 +25,6 @@
             --post-bg-color: rgba(255, 255, 255, 0.7);
             --button-bg-color: rgba(255, 255, 255, 0.8);
         }
-
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg-color: #121212;
@@ -37,12 +34,9 @@
                 --button-bg-color: rgba(50, 50, 50, 0.8);
             }
         }
-
-        /* 以下、既存のCSSはそのまま */
         #input-area {
             margin-bottom: 20px;
         }
-
         #post-input {
             width: calc(100% - 24px);
             padding: 10px;
@@ -52,12 +46,10 @@
             color: var(--text-color);
             border: 1px solid var(--border-color);
         }
-
         #posts {
             list-style: none;
             padding: 0;
         }
-
         .post {
             border: 1px solid var(--border-color);
             padding: 10px;
@@ -67,7 +59,6 @@
             background-color: var(--post-bg-color);
             color: var(--text-color);
         }
-
         .post:hover::after {
             content: attr(data-time);
             position: absolute;
@@ -76,40 +67,6 @@
             font-size: 12px;
             color: #aaa;
         }
-
-        #copy-url-btn,
-        #download-csv-btn {
-            position: fixed;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            background-color: var(--button-bg-color);
-            color: var(--text-color);
-        }
-
-        #copy-url-btn {
-            bottom: 70px;
-            right: 20px;
-        }
-
-        #download-csv-btn {
-            bottom: 10px;
-            right: 20px;
-        }
-
-        #copy-url-btn:hover,
-        #download-csv-btn:hover {
-            opacity: 0.8;
-        }
-
         .modal {
             display: none;
             position: fixed;
@@ -120,7 +77,6 @@
             height: 100%;
             background-color: rgba(0, 0, 0, 0.7);
         }
-
         .modal-content {
             background-color: var(--bg-color);
             margin: 15% auto;
@@ -130,8 +86,8 @@
             max-width: 500px;
             text-align: center;
             color: var(--text-color);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-
         .close {
             color: #aaa;
             float: right;
@@ -139,60 +95,62 @@
             font-weight: bold;
             cursor: pointer;
         }
-
         .close:hover {
             color: var(--text-color);
         }
-
         #qrcode {
             margin: 10px auto;
             max-width: 200px;
         }
-
-        #stats-btn {
-            position: fixed;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            z-index: 1000;
+        .modal-buttons {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .modal-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
             background-color: var(--button-bg-color);
             color: var(--text-color);
-            bottom: 10px;
-            left: 20px;
-            /* 左下に配置 */
+            cursor: pointer;
+            font-size: 16px;
+            transition: opacity 0.2s;
         }
-
-        #stats-btn:hover {
+        .modal-button:hover {
             opacity: 0.8;
         }
+        #shareUrl {
+            word-break: break-all;
+            color: var(--text-color);
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+        }
     </style>
-
 </head>
-
 <body>
     <div id="input-area">
-        <input type="text" id="post-input" placeholder="つぶやきを入力..." autocomplete="off">
+        <input type="text" id="post-input" placeholder="つぶやき・検索（設定などは右クリック）" autocomplete="off">
     </div>
     <ul id="posts"></ul>
-    <button id="copy-url-btn" title="URLを表示">🔗</button>
-    <button id="download-csv-btn" title="データをダウンロード">📥</button>
-    <button id="stats-btn" title="統計を表示">📈</button>
-
 
     <!-- モーダル -->
-    <div id="urlModal" class="modal">
+    <div id="contextModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h3>引き継ぎURL</h3>
-            <a id="shareUrl" target="_blank" style="word-break: break-all;"></a>
-            <div id="qrcode"></div>
+            <h3>メニュー</h3>
+            <div class="modal-buttons">
+                <button id="showUrlBtn" class="modal-button">🔗 引き継ぎURLを表示</button>
+                <button id="downloadCsvBtn" class="modal-button">📥 データをダウンロード</button>
+                <button id="statsBtn" class="modal-button">📈 統計を表示</button>
+            </div>
+            <div id="urlContent" style="display: none;">
+                <h3>引き継ぎURL</h3>
+                <a id="shareUrl" target="_blank"></a>
+                <div id="qrcode"></div>
+            </div>
         </div>
     </div>
 
@@ -205,6 +163,7 @@
         const darkPastelColors = [
             '#4A2D3A', '#4A412A', '#3A3A4A', '#2D4A3A', '#4A2D2D', '#2D3A4A', '#4A3A2D'
         ];
+
         // ランダムなパステルカラーを適用
         function applyRandomPastelColor() {
             const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -214,28 +173,27 @@
             document.documentElement.style.setProperty('--text-color', isDarkMode ? '#f0f0f0' : '#333333');
             document.documentElement.style.setProperty('--border-color', isDarkMode ? '#555' : '#ccc');
         }
+
         // ページロード時にランダムなパステルカラーを適用
         window.addEventListener('load', applyRandomPastelColor);
+
         const input = document.getElementById('post-input');
         const postsList = document.getElementById('posts');
-        const copyUrlBtn = document.getElementById('copy-url-btn');
-        const downloadCsvBtn = document.getElementById('download-csv-btn');
-        const statsBtn = document.getElementById('stats-btn');
-        // /statsに遷移する関数
-        function goToStats() {
-            window.location.href = '/stats';
-        }
-
-        // クリックイベントの追加
-        statsBtn.addEventListener('click', goToStats);
-        const modal = document.getElementById('urlModal');
-        const span = document.getElementsByClassName('close')[0];
+        const modal = document.getElementById('contextModal');
+        const urlContent = document.getElementById('urlContent');
         const shareUrlElement = document.getElementById('shareUrl');
+        const showUrlBtn = document.getElementById('showUrlBtn');
+        const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+        const statsBtn = document.getElementById('statsBtn');
+        const closeBtn = document.querySelector('.close');
+
         let allPosts = [];
         let isPosting = false;
+
         // URLパラメータを取得
         const urlParams = new URLSearchParams(window.location.search);
         const postOnlyMode = urlParams.get('postonly') === 'yes';
+
         // トークン取得関数
         function getTokenFromCookie() {
             const urlToken = urlParams.get('token');
@@ -246,6 +204,7 @@
             const tokenCookie = cookies.find(cookie => cookie.startsWith('token='));
             return tokenCookie ? tokenCookie.split('=')[1] : '';
         }
+
         // 全件取得関数
         async function fetchAllPosts() {
             if (postOnlyMode) {
@@ -255,12 +214,14 @@
             allPosts = await response.json();
             renderPosts(allPosts);
         }
+
         // つぶやき表示関数
         function renderPosts(posts) {
             postsList.innerHTML = posts.map(post =>
                 `<li class="post" data-time="${new Date(post.created_at).toLocaleString()}">${post.content}</li>`
             ).join('');
         }
+
         // ローカル絞り込み関数
         function filterPosts(query) {
             if (postOnlyMode || !query) {
@@ -279,7 +240,6 @@
                 return s.toLowerCase();
             }
             const normalize = s => caseConvert(widthConvert(kanaConvert((s || '').trim())));
-
             // ↓まず全エイリアス辞書を生成（双方向）
             const aliasMap = {};
             allPosts.forEach(post => {
@@ -297,13 +257,11 @@
                     }
                 }
             });
-
             // クエリのエイリアス展開
             const queries = [normalize(query)];
             if (aliasMap[queries[0]]) {
                 queries.push(aliasMap[queries[0]]);
             }
-
             const filtered = allPosts.filter(post => {
                 // 本文とイコール分岐ワードたち
                 let aliasList = [post.content];
@@ -322,6 +280,7 @@
             });
             renderPosts(filtered);
         }
+
         // 投稿関数
         async function postContent(content) {
             await fetch('/post', {
@@ -334,8 +293,8 @@
             if (!postOnlyMode) {
                 await fetchAllPosts();
             }
-            // input.value はこの関数ではクリアしない
         }
+
         // URL表示関数
         function showUrlWithToken() {
             const token = getTokenFromCookie();
@@ -343,8 +302,9 @@
             shareUrlElement.href = url;
             shareUrlElement.textContent = url;
             document.getElementById('qrcode').innerHTML = `<img src="https://idy.vercel.app/q/${encodeURIComponent(url)}" alt="QRコード" style="max-width: 200px;">`;
-            modal.style.display = 'block';
+            urlContent.style.display = 'block';
         }
+
         // CSVダウンロード関数
         function downloadCsv() {
             if (postOnlyMode) {
@@ -365,10 +325,41 @@
             link.click();
             document.body.removeChild(link);
         }
+
+        // 統計表示関数
+        function goToStats() {
+            window.location.href = '/stats';
+        }
+
+        // 右クリックでモーダル表示
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            urlContent.style.display = 'none';
+            modal.style.display = 'block';
+        });
+
+        // モーダルを閉じる
+        closeBtn.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        // モーダル外をクリックで閉じる
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // ボタンクリックイベント
+        showUrlBtn.addEventListener('click', showUrlWithToken);
+        downloadCsvBtn.addEventListener('click', downloadCsv);
+        statsBtn.addEventListener('click', goToStats);
+
         // 入力イベント（ローカル絞り込み）
         input.addEventListener('input', (e) => {
             filterPosts(e.target.value);
         });
+
         // Enterキーで投稿
         input.addEventListener('keydown', async (e) => {
             if (e.key === 'Enter' && input.value.trim() && !isPosting) {
@@ -391,26 +382,13 @@
                 }
             }
         });
-        // ボタンクリックでURL表示
-        copyUrlBtn.addEventListener('click', showUrlWithToken);
-        // ボタンクリックでCSVダウンロード
-        downloadCsvBtn.addEventListener('click', downloadCsv);
-        // モーダルを閉じる
-        span.onclick = function () {
-            modal.style.display = 'none';
-        }
-        // モーダル外をクリックで閉じる
-        window.onclick = function (event) {
-            if (event.target == modal) {
-                modal.style.display = 'none';
-            }
-        }
+
         // 初期表示
         if (!postOnlyMode) {
             fetchAllPosts();
         }
+
         input.focus();
     </script>
 </body>
-
 </html>
