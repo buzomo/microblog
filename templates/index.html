@@ -70,7 +70,6 @@
             color: var(--text-color);
             transition: transform 0.1s ease;
             font-size: larger;
-        
         }
 
         .post:hover {
@@ -223,7 +222,6 @@
         <input type="text" id="post-input" placeholder="つぶやき・検索（設定などは右クリック）" autocomplete="off">
     </div>
     <ul id="posts"></ul>
-
     <div id="contextModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -245,7 +243,6 @@
             </div>
         </div>
     </div>
-
     <script>
         // パステルカラーの配列（ライトモード用）
         const lightPastelColors = [
@@ -254,15 +251,13 @@
             '#F0F8FF', '#FAEBD7', '#FFE4E1', '#D3D3D3', '#F5F5DC',
             '#FFEBCD', '#F5DEB3', '#FFFACD', '#E6E6FA', '#F0FFF0'
         ];
-
         // ダークモード用パステルカラー
         const darkPastelColors = [
             '#4A2D3A', '#4A412A', '#3A3A4A', '#2D4A3A', '#4A2D2D',
             '#2D3A4A', '#4A3A2D', '#3A2D4A', '#2D3A3A', '#3A3A2D',
-            '#4A3A4A', '#2D2D4A', '#3A2D3A', '#4A413A', '#3A414A',
-            '#2D414A', '#413A4A', '#3A412D', '#412D3A', '#4A2D41'
+            '#4A3A4A', '#2D2D4A', '#3A2D3A', '#413A2D', '#412D3A',
+            '#4A2D41', '#2D414A', '#413A4A', '#3A412D', '#412D3A'
         ];
-
         // 配列をシャッフル
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
@@ -271,7 +266,6 @@
             }
             return array;
         }
-
         // ランダムなパステルカラーを適用
         function applyRandomPastelColor() {
             const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -279,7 +273,6 @@
             pastelColors = shuffleArray(pastelColors);
             const randomColor = pastelColors[0];
             document.documentElement.style.setProperty('--bg-color', randomColor);
-
             // 経過時間に応じた黄ばみ
             const lastUpdate = localStorage.getItem('lastUpdate');
             if (lastUpdate) {
@@ -290,10 +283,8 @@
                 localStorage.setItem('lastUpdate', Date.now());
             }
         }
-
         // ページロード時にランダムなパステルカラーを適用
         window.addEventListener('load', applyRandomPastelColor);
-
         const input = document.getElementById('post-input');
         const postsList = document.getElementById('posts');
         const modal = document.getElementById('contextModal');
@@ -306,14 +297,11 @@
         const statsBtn = document.getElementById('statsBtn');
         const showHistoryBtn = document.getElementById('showHistoryBtn');
         const closeBtn = document.querySelector('.close');
-
         let allPosts = [];
         let isPosting = false;
-
         // URLパラメータを取得
         const urlParams = new URLSearchParams(window.location.search);
         const postOnlyMode = urlParams.get('postonly') === 'yes';
-
         // トークン取得関数
         function getTokenFromCookie() {
             const urlToken = urlParams.get('token');
@@ -322,7 +310,6 @@
             const tokenCookie = cookies.find(cookie => cookie.startsWith('token='));
             return tokenCookie ? tokenCookie.split('=')[1] : '';
         }
-
         // 全件取得関数
         async function fetchAllPosts() {
             if (postOnlyMode) return;
@@ -330,28 +317,24 @@
             allPosts = await response.json();
             renderPosts(allPosts);
         }
-
         // つぶやき表示関数
         function renderPosts(posts) {
             postsList.innerHTML = posts.map(post =>
                 `<li class="post" data-time="${new Date(post.created_at).toLocaleString()}">${post.content}</li>`
             ).join('');
         }
-
         // ローカル絞り込み関数
         function filterPosts(query) {
             if (postOnlyMode || !query) {
                 if (!postOnlyMode) renderPosts(allPosts);
                 return;
             }
-
             function normalize(s) {
                 return s.replace(/[ァ-ヴ]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60))
                     .replace(/[Ａ-Ｚａ-ｚ０-９]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0))
                     .toLowerCase()
                     .trim();
             }
-
             const aliasMap = {};
             allPosts.forEach(post => {
                 const eqMatch = post.content.match(/^([^[=\s]+)\s*=\s*([^=\s]+)$/);
@@ -368,10 +351,8 @@
                     }
                 }
             });
-
             const queries = [normalize(query)];
             if (aliasMap[queries[0]]) queries.push(aliasMap[queries[0]]);
-
             const filtered = allPosts.filter(post => {
                 let aliasList = [post.content];
                 const eqMatch = post.content.match(/^([^[=\s]+)\s*=\s*([^=\s]+)$/);
@@ -383,11 +364,9 @@
                 }
                 return queries.some(q => aliasList.some(str => normalize(str).includes(q)));
             });
-
             renderPosts(filtered);
             saveSearchQuery(query);
         }
-
         // 投稿関数
         async function postContent(content) {
             await fetch('/post', {
@@ -397,7 +376,6 @@
             });
             if (!postOnlyMode) await fetchAllPosts();
         }
-
         // URL表示関数
         function showUrlWithToken() {
             const token = getTokenFromCookie();
@@ -409,7 +387,6 @@
             urlContent.style.display = 'block';
             searchHistory.style.display = 'none';
         }
-
         // CSVダウンロード関数
         function downloadCsv() {
             if (postOnlyMode) {
@@ -430,12 +407,10 @@
             link.click();
             document.body.removeChild(link);
         }
-
         // 統計表示関数
         function goToStats() {
             window.location.href = '/stats';
         }
-
         // 検索履歴の保存と表示
         function saveSearchQuery(query) {
             const history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
@@ -445,14 +420,12 @@
                 updateHistoryDisplay();
             }
         }
-
         function updateHistoryDisplay() {
             const history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
             historyList.innerHTML = history.map(q =>
                 `<li onclick="filterPosts('${q}')">${q}</li>`
             ).join('');
         }
-
         // 右クリックでモーダル表示
         document.addEventListener('contextmenu', (e) => {
             e.preventDefault();
@@ -461,15 +434,12 @@
             modal.classList.add('show');
             modal.style.display = 'block';
         });
-
         // モーダルを閉じる
         closeBtn.onclick = () => modal.style.display = 'none';
-
         // モーダル外をクリックで閉じる
         window.onclick = (event) => {
             if (event.target === modal) modal.style.display = 'none';
         };
-
         // ボタンクリックイベント
         showUrlBtn.addEventListener('click', showUrlWithToken);
         downloadCsvBtn.addEventListener('click', downloadCsv);
@@ -479,10 +449,8 @@
             urlContent.style.display = 'none';
             updateHistoryDisplay();
         });
-
         // 入力イベント（ローカル絞り込み）
         input.addEventListener('input', (e) => filterPosts(e.target.value));
-
         // Enterキーで投稿
         input.addEventListener('keydown', async (e) => {
             if (e.key === 'Enter' && input.value.trim() && !isPosting) {
@@ -501,10 +469,10 @@
                 } finally {
                     input.disabled = false;
                     isPosting = false;
+                    input.focus(); // 投稿後にフォーカスを戻す
                 }
             }
         });
-
         // 初期表示
         if (!postOnlyMode) fetchAllPosts();
         input.focus();
