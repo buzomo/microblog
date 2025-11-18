@@ -31,6 +31,7 @@ def create_table():
                 id SERIAL PRIMARY KEY,
                 token VARCHAR(64) NOT NULL,
                 content TEXT NOT NULL,
+                is_highlight BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
@@ -72,21 +73,17 @@ def search_posts(token, query):
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=DictCursor)
 
-        # カタカナ⇄ひらがな変換
         def kana_convert(s):
             return re.sub(r"[ァ-ヴ]", lambda m: chr(ord(m.group(0)) - 0x60), s)
 
-        # 全角⇄半角変換
         def width_convert(s):
             return re.sub(
                 r"[Ａ-Ｚａ-ｚ０-９]", lambda m: chr(ord(m.group(0)) - 0xFEE0), s
             )
 
-        # 大文字⇄小文字変換
         def case_convert(s):
             return s.lower()
 
-        # 検索クエリ生成
         converted_query = f"%{kana_convert(width_convert(case_convert(query))) }%"
         cursor.execute(
             f"SELECT * FROM {TABLE_NAME} WHERE token = %s AND LOWER(content) LIKE LOWER(%s) ORDER BY created_at DESC",
@@ -156,6 +153,27 @@ def post():
             return jsonify({"status": "success"})
         else:
             return jsonify({"status": "error", "message": "Content is empty"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/highlight", methods=["POST"])
+def highlight():
+    try:
+        token = get_token()
+        post_id = request.json.get("id")
+        is_highlight = request.json.get("is_highlight", False)
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            f"UPDATE {TABLE_NAME} SET is_highlight = %s WHERE id = %s AND token = %s",
+            (is_highlight, post_id, token),
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

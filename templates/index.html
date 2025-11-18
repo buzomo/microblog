@@ -323,9 +323,13 @@
         }
         function renderPosts(posts) {
             postsList.innerHTML = posts.map(post =>
-                `<li class="post" data-time="${new Date(post.created_at).toLocaleString()}">${post.content}</li>`
+                `<li class="post" data-time="${new Date(post.created_at).toLocaleString()}"
+            style="${post.is_highlight ? 'font-weight: bold; background-color: yellow;' : ''}">
+            ${post.content}
+        </li>`
             ).join('');
         }
+
         function updatePostCount() {
             postCountElement.textContent = `${allPosts.length} Posts`;
         }
@@ -489,6 +493,45 @@
         }
         if (!postOnlyMode) fetchAllPosts();
         input.focus();
+
+        // ポストをタップしたときのハイライト処理
+        postsList.addEventListener('click', async (e) => {
+            const postElement = e.target.closest('.post');
+            if (!postElement) return;
+
+            const content = postElement.textContent;
+            const postId = allPosts.find(post => post.content === content)?.id;
+            if (!postId) return;
+
+            const isHighlighted = postElement.style.fontWeight === 'bold';
+            postElement.style.fontWeight = isHighlighted ? 'normal' : 'bold';
+            postElement.style.backgroundColor = isHighlighted ? '' : 'yellow';
+
+            try {
+                await fetch('/highlight', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: postId, is_highlight: !isHighlighted }),
+                });
+            } catch (error) {
+                console.error('Error updating highlight:', error);
+            }
+        });
+
+        let showOnlyHighlighted = false;
+
+        input.addEventListener('click', () => {
+            if (input.value.trim() === '') {
+                showOnlyHighlighted = !showOnlyHighlighted;
+                if (showOnlyHighlighted) {
+                    const highlightedPosts = allPosts.filter(post => post.is_highlight);
+                    renderPosts(highlightedPosts);
+                } else {
+                    renderPosts(allPosts);
+                }
+            }
+        });
+
     </script>
 </body>
 
