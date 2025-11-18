@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +18,6 @@
             --hover-scale: 1.02;
             --sepia-filter: sepia(0);
         }
-
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg-color: #121212;
@@ -29,7 +27,6 @@
                 --button-bg-color: rgba(50, 50, 50, 0.9);
             }
         }
-
         body {
             max-width: 600px;
             margin: 0 auto;
@@ -40,11 +37,9 @@
             transition: background-color 0.5s ease, color 0.5s ease;
             filter: var(--sepia-filter);
         }
-
         #input-area {
             margin-bottom: 20px;
         }
-
         #post-input {
             width: calc(100% - 24px);
             padding: 12px;
@@ -55,12 +50,10 @@
             border: 1px solid var(--border-color);
             font-weight: 500;
         }
-
         #posts {
             list-style: none;
             padding: 0;
         }
-
         .post {
             padding: 15px;
             margin-bottom: 12px;
@@ -71,11 +64,9 @@
             transition: transform 0.1s ease;
             font-size: larger;
         }
-
         .post:hover {
             transform: scale(1.01);
         }
-
         .post:hover::after {
             content: attr(data-time);
             position: absolute;
@@ -84,7 +75,6 @@
             font-size: 12px;
             color: #aaa;
         }
-
         .modal {
             display: none;
             position: fixed;
@@ -97,11 +87,9 @@
             opacity: 0;
             transition: opacity 0.3s ease;
         }
-
         .modal.show {
             opacity: 1;
         }
-
         .modal-content {
             background-color: var(--bg-color);
             margin: 20% auto;
@@ -113,7 +101,6 @@
             color: var(--text-color);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
-
         .close {
             color: #aaa;
             float: right;
@@ -122,28 +109,28 @@
             cursor: pointer;
             transition: color 0.2s ease;
         }
-
         .close:hover {
             color: var(--text-color);
         }
-
+        #post-count {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
         #qrcode {
             margin: 15px auto;
             max-width: 200px;
         }
-
         #qrcode img {
             max-width: 100%;
             height: auto;
         }
-
         .modal-buttons {
             display: flex;
             flex-direction: column;
             gap: 12px;
             margin-top: 15px;
         }
-
         .modal-button {
             padding: 12px 18px;
             border: none;
@@ -154,11 +141,9 @@
             font-size: 16px;
             transition: transform 0.2s ease;
         }
-
         .modal-button:hover {
             transform: scale(var(--hover-scale));
         }
-
         #shareUrl {
             word-break: break-all;
             color: var(--text-color);
@@ -169,17 +154,14 @@
             background-color: var(--border-color);
             border-radius: 6px;
         }
-
         #searchHistory {
             display: none;
             margin-top: 20px;
             text-align: left;
         }
-
         #searchHistory.show {
             display: block;
         }
-
         #historyList {
             max-height: 150px;
             overflow-y: auto;
@@ -188,27 +170,22 @@
             border: 1px solid var(--border-color);
             border-radius: 6px;
         }
-
         #historyList li {
             padding: 8px 12px;
             cursor: pointer;
             transition: background-color 0.1s ease;
         }
-
         #historyList li:hover {
             background-color: var(--border-color);
         }
-
         @media (max-width: 600px) {
             #post-input {
                 font-size: 18px;
                 padding: 14px;
             }
-
             .post {
                 padding: 14px;
             }
-
             .modal-content {
                 margin: 25% auto;
                 padding: 20px;
@@ -216,7 +193,6 @@
         }
     </style>
 </head>
-
 <body>
     <div id="input-area">
         <input type="text" id="post-input" placeholder="つぶやき・検索（設定などは右クリック）" autocomplete="off">
@@ -224,6 +200,7 @@
     <ul id="posts"></ul>
     <div id="contextModal" class="modal">
         <div class="modal-content">
+            <div id="post-count"></div>
             <span class="close">&times;</span>
             <h3>メニュー</h3>
             <div class="modal-buttons">
@@ -231,6 +208,7 @@
                 <button id="downloadCsvBtn" class="modal-button">📥 データをダウンロード</button>
                 <button id="statsBtn" class="modal-button">📈 統計を表示</button>
                 <button id="showHistoryBtn" class="modal-button">🕵️ 検索履歴を表示</button>
+                <button id="sendTodayPostsBtn" class="modal-button">📤 今日のつぶやきを送信</button>
             </div>
             <div id="urlContent" style="display: none;">
                 <h3>引き継ぎURL</h3>
@@ -296,12 +274,15 @@
         const downloadCsvBtn = document.getElementById('downloadCsvBtn');
         const statsBtn = document.getElementById('statsBtn');
         const showHistoryBtn = document.getElementById('showHistoryBtn');
+        const sendTodayPostsBtn = document.getElementById('sendTodayPostsBtn');
+        const postCountElement = document.getElementById('post-count');
         const closeBtn = document.querySelector('.close');
         let allPosts = [];
         let isPosting = false;
         // URLパラメータを取得
         const urlParams = new URLSearchParams(window.location.search);
         const postOnlyMode = urlParams.get('postonly') === 'yes';
+        const postParam = urlParams.get('p');
         // トークン取得関数
         function getTokenFromCookie() {
             const urlToken = urlParams.get('token');
@@ -316,12 +297,17 @@
             const response = await fetch('/search?q=');
             allPosts = await response.json();
             renderPosts(allPosts);
+            updatePostCount();
         }
         // つぶやき表示関数
         function renderPosts(posts) {
             postsList.innerHTML = posts.map(post =>
                 `<li class="post" data-time="${new Date(post.created_at).toLocaleString()}">${post.content}</li>`
             ).join('');
+        }
+        // ポスト数を更新
+        function updatePostCount() {
+            postCountElement.textContent = `${allPosts.length} Posts`;
         }
         // ローカル絞り込み関数
         function filterPosts(query) {
@@ -395,7 +381,7 @@
             }
             const csvHeader = ['タイムスタンプ,メモ内容'];
             const csvRows = allPosts.map(post =>
-                `"${new Date(post.created_at).toLocaleString()}","${post.content.replace(/"/g, '""')}"`
+                `"${new Date(post.created_at).toLocaleString()}","${post.content.replace(/\"/g, '""')}"`
             );
             const csvContent = [...csvHeader, ...csvRows].join('\n');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -410,6 +396,15 @@
         // 統計表示関数
         function goToStats() {
             window.location.href = '/stats';
+        }
+        // 今日のつぶやきを送信
+        function sendTodayPosts() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayPosts = allPosts.filter(post => post.created_at.startsWith(today));
+            const message = todayPosts.map(post => `${new Date(post.created_at).toLocaleTimeString()} ${post.content}`).join('\n');
+            alert(`今日のつぶやきを送信します:\n\n${message}`);
+            // 実際の送信処理はここを実装
+            // 例: fetch('/send_to_lechat', { method: 'POST', body: JSON.stringify({ message }) });
         }
         // 検索履歴の保存と表示
         function saveSearchQuery(query) {
@@ -449,6 +444,7 @@
             urlContent.style.display = 'none';
             updateHistoryDisplay();
         });
+        sendTodayPostsBtn.addEventListener('click', sendTodayPosts);
         // 入力イベント（ローカル絞り込み）
         input.addEventListener('input', (e) => filterPosts(e.target.value));
         // Enterキーで投稿
@@ -473,10 +469,15 @@
                 }
             }
         });
+        // URLパラメータpで投稿
+        if (postParam) {
+            input.value = postParam;
+            const event = new KeyboardEvent('keydown', { key: 'Enter' });
+            input.dispatchEvent(event);
+        }
         // 初期表示
         if (!postOnlyMode) fetchAllPosts();
         input.focus();
     </script>
 </body>
-
 </html>
