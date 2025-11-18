@@ -7,11 +7,12 @@ import re
 
 app = Flask(__name__)
 
-# Neonデータベース接続設定（環境変数から読み込み）
+# Neonデータベース接続設定
 DATABASE_URL = os.getenv(
     "DATABASE_URL", "postgresql://user:password@localhost:5432/dbname"
 )
-TABLE_NAME = "posts_2b6a83"
+TABLE_NAME_POSTS = "posts_2b6a83"
+TABLE_NAME_FREQ_WORDS = "freq_words_7bf883"
 
 
 # データベース接続関数
@@ -20,14 +21,14 @@ def get_db_connection():
     return conn
 
 
-# テーブル作成関数
-def create_table():
+# テーブル作成関数（投稿用）
+def create_posts_table():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
+            CREATE TABLE IF NOT EXISTS {TABLE_NAME_POSTS} (
                 id SERIAL PRIMARY KEY,
                 token VARCHAR(64) NOT NULL,
                 content TEXT NOT NULL,
@@ -39,14 +40,36 @@ def create_table():
         conn.commit()
         cursor.close()
         conn.close()
-        print("Table created or already exists.")
     except Exception as e:
-        print(f"Error creating table: {e}")
+        print(f"Error creating posts table: {e}")
+        raise
+
+
+# テーブル作成関数（頻出ワード用）
+def create_freq_words_table():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {TABLE_NAME_FREQ_WORDS} (
+                id SERIAL PRIMARY KEY,
+                token VARCHAR(64) NOT NULL,
+                word TEXT NOT NULL
+            )
+            """
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error creating freq_words table: {e}")
         raise
 
 
 # アプリケーション起動時にテーブルを作成
-create_table()
+create_posts_table()
+create_freq_words_table()
 
 
 # トークン生成関数
@@ -54,17 +77,56 @@ def generate_token():
     return secrets.token_hex(32)
 
 
-# トークン取得関数（URLパラメータを優先）
+# トークン取得関数
 def get_token():
-    # URLパラメータからトークンを取得
     token = request.args.get("token")
     if token:
         return token
-    # Cookieからトークンを取得
     token = request.cookies.get("token")
     if not token:
         token = generate_token()
     return token
+
+
+# 頻出ワード一覧取得
+@app.route("/freq_words", methods=["GET"])
+def get_freq_words():
+    try:
+        token = get_token()
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=DictCursor)
+        cursor.execute(
+            f"SELECT * FROM {TABLE_NAME_FREQ_WORDS} WHERE token = %s ORDER BY id DESC",
+            (token,),
+        )
+        words = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify([dict(word) for word in words])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# 頻出ワード追加
+@app.route("/freq_words", methods=["POST"])
+def add_freq_word():
+    try:
+        token = get_token()
+        word = request.json.get("word", "")
+        if not word:
+            return jsonify({"status": "error", "message": "Word is empty"}), 400
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            f"INSERT INTO {TABLE_NAME_FREQ_WORDS} (token, word) VALUES (%s, %s)",
+            (token, word),
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # 検索関数（部分一致、ひらがな⇄カタカナ、半角⇄全角、大文字⇄小文字を吸収）
@@ -86,7 +148,7 @@ def search_posts(token, query):
 
         converted_query = f"%{kana_convert(width_convert(case_convert(query))) }%"
         cursor.execute(
-            f"SELECT * FROM {TABLE_NAME} WHERE token = %s AND LOWER(content) LIKE LOWER(%s) ORDER BY created_at DESC",
+            f"SELECT * FROM {TABLE_NAME_POSTS} WHERE token = %s AND LOWER(content) LIKE LOWER(%s) ORDER BY created_at DESC",
             (token, converted_query),
         )
         posts = cursor.fetchall()
@@ -104,7 +166,7 @@ def add_post(token, content):
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            f"INSERT INTO {TABLE_NAME} (token, content) VALUES (%s, %s)",
+            f"INSERT INTO {TABLE_NAME_POSTS} (token, content) VALUES (%s, %s)",
             (token, content),
         )
         conn.commit()
@@ -157,17 +219,17 @@ def post():
         return jsonify({"error": str(e)}), 500
 
 
+# ハイライトAPI
 @app.route("/highlight", methods=["POST"])
 def highlight():
     try:
         token = get_token()
         post_id = request.json.get("id")
         is_highlight = request.json.get("is_highlight", False)
-
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            f"UPDATE {TABLE_NAME} SET is_highlight = %s WHERE id = %s AND token = %s",
+            f"UPDATE {TABLE_NAME_POSTS} SET is_highlight = %s WHERE id = %s AND token = %s",
             (is_highlight, post_id, token),
         )
         conn.commit()
@@ -178,6 +240,5 @@ def highlight():
         return jsonify({"error": str(e)}), 500
 
 
-# アプリケーション実行
 if __name__ == "__main__":
     app.run(debug=True)
