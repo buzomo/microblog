@@ -324,12 +324,12 @@
         function renderPosts(posts) {
             postsList.innerHTML = posts.map(post =>
                 `<li class="post" data-time="${new Date(post.created_at).toLocaleString()}"
-            style="${post.is_highlight ? 'font-weight: bold; background-color: yellow;' : ''}">
-            ${post.content}
-        </li>`
+                data-id="${post.id}"
+                style="${post.is_highlight ? 'font-weight: bold; background-color: yellow;' : ''}">
+                    ${post.content}
+                </li>`
             ).join('');
         }
-
         function updatePostCount() {
             postCountElement.textContent = `${allPosts.length} Posts`;
         }
@@ -401,7 +401,7 @@
             }
             const csvHeader = ['タイムスタンプ,メモ内容'];
             const csvRows = allPosts.map(post =>
-                `"${new Date(post.created_at).toLocaleString()}","${post.content.replace(/\"/g, '""')}"`
+                `"${new Date(post.created_at).toLocaleString()}",${post.content.replace(/\"/g, '""')}"`
             );
             const csvContent = [...csvHeader, ...csvRows].join('\n');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -426,8 +426,16 @@
                 return postJstDate === jstDate;
             });
             if (todayPosts.length === 0) return;
-            const message = todayPosts.map(post => post.content).join('\n');
-            const encodedMessage = encodeURIComponent(message);
+
+            // 時刻＋内容のフォーマットでメッセージを作成
+            const message = todayPosts.map(post =>
+                `${new Date(post.created_at).toLocaleTimeString()}：${post.content}`
+            ).join('\n');
+
+            // プロンプトを追加
+            const prompt = `これはランダムなつぶやきです。MECEに整理してください。\n\n${message}`;
+
+            const encodedMessage = encodeURIComponent(prompt);
             const url = `https://chat.mistral.ai/chat?q=${encodedMessage}`;
             window.open(url, '_blank');
         }
@@ -473,7 +481,9 @@
                 isPosting = true;
                 const dummyPost = {
                     content: content,
-                    created_at: new Date().toISOString()
+                    created_at: new Date().toISOString(),
+                    id: Date.now(),
+                    is_highlight: false
                 };
                 allPosts = [dummyPost, ...allPosts];
                 renderPosts(allPosts);
@@ -493,33 +503,42 @@
         }
         if (!postOnlyMode) fetchAllPosts();
         input.focus();
-
         // ポストをタップしたときのハイライト処理
         postsList.addEventListener('click', async (e) => {
             const postElement = e.target.closest('.post');
             if (!postElement) return;
-
-            const content = postElement.textContent;
-            const postId = allPosts.find(post => post.content === content)?.id;
+            const postId = postElement.getAttribute('data-id');
             if (!postId) return;
-
-            const isHighlighted = postElement.style.fontWeight === 'bold';
+            const currentPost = allPosts.find(post => post.id == postId);
+            if (!currentPost) return;
+            const isHighlighted = currentPost.is_highlight;
+            // UIを先に更新（仮）
             postElement.style.fontWeight = isHighlighted ? 'normal' : 'bold';
             postElement.style.backgroundColor = isHighlighted ? '' : 'yellow';
-
             try {
-                await fetch('/highlight', {
+                const response = await fetch('/highlight', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: postId, is_highlight: !isHighlighted }),
                 });
+                if (response.ok) {
+                    // サーバー更新成功時、データを更新
+                    currentPost.is_highlight = !isHighlighted;
+                } else {
+                    // サーバー更新失敗時、UIを元に戻す
+                    postElement.style.fontWeight = isHighlighted ? 'bold' : 'normal';
+                    postElement.style.backgroundColor = isHighlighted ? 'yellow' : '';
+                    alert('ハイライトの更新に失敗しました。');
+                }
             } catch (error) {
                 console.error('Error updating highlight:', error);
+                // サーバー更新失敗時、UIを元に戻す
+                postElement.style.fontWeight = isHighlighted ? 'bold' : 'normal';
+                postElement.style.backgroundColor = isHighlighted ? 'yellow' : '';
+                alert('ハイライトの更新に失敗しました。');
             }
         });
-
         let showOnlyHighlighted = false;
-
         input.addEventListener('click', () => {
             if (input.value.trim() === '') {
                 showOnlyHighlighted = !showOnlyHighlighted;
@@ -531,7 +550,6 @@
                 }
             }
         });
-
     </script>
 </body>
 
