@@ -1,1 +1,2 @@
 - つぶやく、ふりかえる。
+- just start from https://say.poet.blue or host yourself!
