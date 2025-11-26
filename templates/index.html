@@ -722,7 +722,6 @@
             if (!postElement) return;
             // aタグ内をクリックした場合はハイライトしない
             if (e.target.tagName === 'A') return;
-
             const postId = postElement.getAttribute('data-id');
             if (!postId) return;
             const currentPost = allPosts.find(post => post.id == postId);
@@ -730,11 +729,16 @@
 
             // ハイライトの切り替え
             const isHighlighted = currentPost.is_highlight;
-            applyHighlightColor(postElement, !isHighlighted);
+            const willBeHighlighted = !isHighlighted;
 
-            // テキストを読み上げ
-            const utterance = new SpeechSynthesisUtterance(currentPost.content);
-            window.speechSynthesis.speak(utterance);
+            // ハイライトをONにする場合のみ発声
+            if (willBeHighlighted) {
+                const utterance = new SpeechSynthesisUtterance(currentPost.content);
+                window.speechSynthesis.speak(utterance);
+            }
+
+            // ハイライト色を適用
+            applyHighlightColor(postElement, willBeHighlighted);
 
             // クリップボードにコピー
             try {
@@ -749,10 +753,10 @@
                 const response = await fetch('/highlight', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: postId, is_highlight: !isHighlighted }),
+                    body: JSON.stringify({ id: postId, is_highlight: willBeHighlighted }),
                 });
                 if (response.ok) {
-                    currentPost.is_highlight = !isHighlighted;
+                    currentPost.is_highlight = willBeHighlighted;
                 } else {
                     applyHighlightColor(postElement, isHighlighted);
                     alert('ハイライトの更新に失敗しました。');
@@ -763,6 +767,7 @@
                 alert('ハイライトの更新に失敗しました。');
             }
         });
+
 
 
         let showOnlyHighlighted = false;
