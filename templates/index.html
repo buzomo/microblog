@@ -724,31 +724,28 @@
             const postElement = e.target.closest('.post');
             if (!postElement) return;
             if (e.target.tagName === 'A') return;
-
             const postId = postElement.getAttribute('data-id');
             if (!postId) return;
 
-            // 検索クエリをクリアして全投稿を再表示
-            input.value = '';
-            renderPosts(allPosts);
-
-            // 再表示後のDOMから該当の投稿要素を取得
-            setTimeout(() => {
-                const updatedPostElement = document.querySelector(`.post[data-id="${postId}"]`);
-                if (updatedPostElement) {
-                    updatedPostElement.classList.add('highlight');
-                    updatedPostElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                    // 3秒後にハイライトを解除（視覚フィードバックのみ）
-                    setTimeout(() => {
-                        updatedPostElement.classList.remove('highlight');
-                    }, 3000);
-                }
-            }, 100); // レンダリング完了を待つための短いタイムアウト
-
-            // クリップボードにコピー
+            // クリックした投稿をハイライト
             const currentPost = allPosts.find(post => post.id == postId);
             if (currentPost) {
+                currentPost.is_highlight = !currentPost.is_highlight;
+                const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const pastelColors = isDarkMode ? darkPastelColors : lightPastelColors;
+                const shuffledColors = shuffleArray([...pastelColors]);
+                currentPost.highlight_color = shuffledColors[0];
+
+                // 全投稿を再表示（ハイライト状態を反映）
+                renderPosts(allPosts);
+
+                // クリックした投稿をスクロール
+                const updatedPostElement = document.querySelector(`.post[data-id="${postId}"]`);
+                if (updatedPostElement) {
+                    updatedPostElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                // クリップボードにコピー
                 try {
                     await navigator.clipboard.writeText(currentPost.content);
                 } catch (err) {
