@@ -723,36 +723,40 @@
         postsList.addEventListener('click', async (e) => {
             const postElement = e.target.closest('.post');
             if (!postElement) return;
-            // aタグ内をクリックした場合は何もしない
             if (e.target.tagName === 'A') return;
 
             const postId = postElement.getAttribute('data-id');
             if (!postId) return;
 
-            // 検索クエリをクリアして全ての投稿を表示
+            // 検索クエリをクリアして全投稿を再表示
             input.value = '';
             renderPosts(allPosts);
 
-            // クリックされた投稿をハイライト表示（一時的）
-            document.querySelectorAll('.post').forEach(el => {
-                el.classList.remove('highlight');
-            });
-            postElement.classList.add('highlight');
+            // 再表示後のDOMから該当の投稿要素を取得
+            setTimeout(() => {
+                const updatedPostElement = document.querySelector(`.post[data-id="${postId}"]`);
+                if (updatedPostElement) {
+                    updatedPostElement.classList.add('highlight');
+                    updatedPostElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-            // 投稿にスクロール
-            postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // 3秒後にハイライトを解除（視覚フィードバックのみ）
+                    setTimeout(() => {
+                        updatedPostElement.classList.remove('highlight');
+                    }, 3000);
+                }
+            }, 100); // レンダリング完了を待つための短いタイムアウト
 
             // クリップボードにコピー
             const currentPost = allPosts.find(post => post.id == postId);
             if (currentPost) {
                 try {
                     await navigator.clipboard.writeText(currentPost.content);
-                    console.log('Copied to clipboard:', currentPost.content);
                 } catch (err) {
                     console.error('Failed to copy:', err);
                 }
             }
         });
+
 
 
 
