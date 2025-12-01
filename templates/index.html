@@ -723,53 +723,37 @@
         postsList.addEventListener('click', async (e) => {
             const postElement = e.target.closest('.post');
             if (!postElement) return;
-            // aタグ内をクリックした場合はハイライトしない
+            // aタグ内をクリックした場合は何もしない
             if (e.target.tagName === 'A') return;
+
             const postId = postElement.getAttribute('data-id');
             if (!postId) return;
-            const currentPost = allPosts.find(post => post.id == postId);
-            if (!currentPost) return;
 
-            // ハイライトの切り替え
-            const isHighlighted = currentPost.is_highlight;
-            const willBeHighlighted = !isHighlighted;
+            // 検索クエリをクリアして全ての投稿を表示
+            input.value = '';
+            renderPosts(allPosts);
 
-            // ハイライトをONにする場合のみ発声
-            if (willBeHighlighted) {
-                const utterance = new SpeechSynthesisUtterance(currentPost.content);
-                window.speechSynthesis.speak(utterance);
-            }
+            // クリックされた投稿をハイライト表示（一時的）
+            document.querySelectorAll('.post').forEach(el => {
+                el.classList.remove('highlight');
+            });
+            postElement.classList.add('highlight');
 
-            // ハイライト色を適用
-            applyHighlightColor(postElement, willBeHighlighted);
+            // 投稿にスクロール
+            postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             // クリップボードにコピー
-            try {
-                await navigator.clipboard.writeText(currentPost.content);
-                console.log('Copied to clipboard:', currentPost.content);
-            } catch (err) {
-                console.error('Failed to copy:', err);
-            }
-
-            // ハイライト状態をサーバーに反映
-            try {
-                const response = await fetch('/highlight', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: postId, is_highlight: willBeHighlighted }),
-                });
-                if (response.ok) {
-                    currentPost.is_highlight = willBeHighlighted;
-                } else {
-                    applyHighlightColor(postElement, isHighlighted);
-                    alert('ハイライトの更新に失敗しました。');
+            const currentPost = allPosts.find(post => post.id == postId);
+            if (currentPost) {
+                try {
+                    await navigator.clipboard.writeText(currentPost.content);
+                    console.log('Copied to clipboard:', currentPost.content);
+                } catch (err) {
+                    console.error('Failed to copy:', err);
                 }
-            } catch (error) {
-                console.error('Error updating highlight:', error);
-                applyHighlightColor(postElement, isHighlighted);
-                alert('ハイライトの更新に失敗しました。');
             }
         });
+
 
 
 
