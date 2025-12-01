@@ -679,15 +679,17 @@
                 };
                 allPosts = [dummyPost, ...allPosts];
                 renderPosts(allPosts);
+                input.focus(); // ここでフォーカスを戻す
                 try {
                     await postContent(content);
                 } finally {
                     input.disabled = false;
                     isPosting = false;
-                    input.focus();
+                    input.focus(); // 非同期処理完了後にもフォーカスを戻す
                 }
             }
         });
+
 
         wordInput.addEventListener('keydown', async (e) => {
             if (e.key === 'Enter' && wordInput.value.trim()) {
@@ -792,6 +794,13 @@
 
         if (!postOnlyMode) fetchAllPosts();
         input.focus();
+        // ページにフォーカスが戻った時に最新ポストを取得
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && !postOnlyMode) {
+                await fetchAllPosts();
+            }
+        });
+
     </script>
 
 </body>
