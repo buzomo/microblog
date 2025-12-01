@@ -413,6 +413,8 @@
         let allPosts = [];
         let isPosting = false;
         let freqWords = [];
+        let isSearchMode = false;
+
 
         // トークン取得
         function getTokenFromCookie() {
@@ -462,6 +464,7 @@
         function filterPosts(query) {
             if (postOnlyMode || !query) {
                 if (!postOnlyMode) renderPosts(allPosts);
+                isSearchMode = false;
                 return;
             }
             function normalize(s) {
@@ -470,6 +473,7 @@
                     .toLowerCase()
                     .trim();
             }
+            isSearchMode = true;
             const aliasMap = {};
             allPosts.forEach(post => {
                 const eqMatch = post.content.match(/^([^[=\s]+)\s*=\s*([^=\s]+)$/);
@@ -719,39 +723,48 @@
             }
         });
 
-        // 投稿リストのクリックイベントハンドラを更新
+        // postsList のクリックイベントハンドラを修正
         postsList.addEventListener('click', async (e) => {
             const postElement = e.target.closest('.post');
             if (!postElement) return;
-            // aタグ内をクリックした場合はハイライトしない
             if (e.target.tagName === 'A') return;
             const postId = postElement.getAttribute('data-id');
             if (!postId) return;
             const currentPost = allPosts.find(post => post.id == postId);
             if (!currentPost) return;
 
-            // ハイライトの切り替え
+            // 検索モードの場合
+            if (isSearchMode) {
+                // 絞り込みを解除して全件表示
+                renderPosts(allPosts);
+                isSearchMode = false;
+                // 該当投稿にスクロール
+                const allPostElements = document.querySelectorAll('.post');
+                const targetElement = Array.from(allPostElements).find(el => el.getAttribute('data-id') == postId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // ハイライトを一時的に適用（視認性向上）
+                    targetElement.classList.add('highlight');
+                    setTimeout(() => {
+                        targetElement.classList.remove('highlight');
+                    }, 2000);
+                }
+                return;
+            }
+
+            // 従来のハイライトトグル・発声・クリップボードコピー
             const isHighlighted = currentPost.is_highlight;
             const willBeHighlighted = !isHighlighted;
-
-            // ハイライトをONにする場合のみ発声
             if (willBeHighlighted) {
                 const utterance = new SpeechSynthesisUtterance(currentPost.content);
                 window.speechSynthesis.speak(utterance);
             }
-
-            // ハイライト色を適用
             applyHighlightColor(postElement, willBeHighlighted);
-
-            // クリップボードにコピー
             try {
                 await navigator.clipboard.writeText(currentPost.content);
-                console.log('Copied to clipboard:', currentPost.content);
             } catch (err) {
                 console.error('Failed to copy:', err);
             }
-
-            // ハイライト状態をサーバーに反映
             try {
                 const response = await fetch('/highlight', {
                     method: 'POST',
@@ -770,7 +783,6 @@
                 alert('ハイライトの更新に失敗しました。');
             }
         });
-
 
 
         let showOnlyHighlighted = false;
