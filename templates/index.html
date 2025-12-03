@@ -398,18 +398,18 @@
         function renderPosts(posts) {
             postsList.innerHTML = posts.map(post => {
                 const content = post.content.startsWith('http://') || post.content.startsWith('https://')
-                    ? `<a href="${post.content}" target="_blank" class="post-thumbnail-link">
-                           <img src="${getThumbnailUrl(post.content)}" alt="サムネイル" class="post-thumbnail" onerror="this.style.display='none'; this.parentNode.innerHTML='${post.content}';">
-                       </a>`
+                    ? `<a href="${post.content}" target="_blank" class="post-thumbnail-link" data-encoded-url="${encodeURIComponent(post.content)}">
+                       <img src="${getThumbnailUrl(post.content)}" alt="サムネイル" class="post-thumbnail" onerror="this.style.display='none'; this.parentNode.innerHTML='${post.content}';">
+                   </a>`
                     : post.content;
                 return `
-                    <li class="post ${post.is_highlight ? 'highlight' : ''}"
-                        data-time="${new Date(post.created_at).toLocaleString()}"
-                        data-id="${post.id}"
-                        style="${post.is_highlight ? `background-color: ${post.highlight_color || ''};` : ''}">
-                        ${content}
-                    </li>
-                `;
+                <li class="post ${post.is_highlight ? 'highlight' : ''}"
+                    data-time="${new Date(post.created_at).toLocaleString()}"
+                    data-id="${post.id}"
+                    style="${post.is_highlight ? `background-color: ${post.highlight_color || ''};` : ''}">
+                    ${content}
+                </li>
+            `;
             }).join('');
             document.querySelectorAll('.post.highlight').forEach(el => {
                 applyHighlightColor(el, true);
@@ -429,12 +429,14 @@
                 isSearchMode = false;
                 return;
             }
+
             function normalize(s) {
                 return s.replace(/[ァ-ヴ]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60))
                     .replace(/[Ａ-Ｚａ-ｚ０-９]/g, m => String.fromCharCode(m.charCodeAt(0) - 0xFEE0))
                     .toLowerCase()
                     .trim();
             }
+
             isSearchMode = true;
             const aliasMap = {};
             allPosts.forEach(post => {
@@ -452,8 +454,13 @@
                     }
                 }
             });
+
             const queries = [normalize(query)];
             if (aliasMap[queries[0]]) queries.push(aliasMap[queries[0]]);
+
+            // エンコードされたURLも検索対象に含める
+            const encodedQuery = encodeURIComponent(query);
+
             const filtered = allPosts.filter(post => {
                 let aliasList = [post.content];
                 const eqMatch = post.content.match(/^([^[=\s]+)\s*=\s*([^=\s]+)$/);
@@ -463,13 +470,21 @@
                     const eqParts = post.content.split('=');
                     if (eqParts.length === 2) aliasList.push(eqParts[0], eqParts[1]);
                 }
-                return queries.some(q => aliasList.some(str => normalize(str).includes(q)));
+
+                // URLの場合はエンコードされた文字列も検索対象に含める
+                if (post.content.startsWith('http://') || post.content.startsWith('https://')) {
+                    const encodedContent = encodeURIComponent(post.content);
+                    return queries.some(q => aliasList.some(str => normalize(str).includes(q))) ||
+                        encodedContent.includes(encodedQuery);
+                } else {
+                    return queries.some(q => aliasList.some(str => normalize(str).includes(q)));
+                }
             });
+
             renderPosts(filtered);
             saveSearchQuery(query);
         }
 
-        // 投稿送信
         // 投稿送信
         async function postContent(content) {
             await fetch('/post', {
