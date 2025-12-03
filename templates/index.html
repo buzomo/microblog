@@ -231,80 +231,7 @@
             }
         }
 
-        /* ワード追加モーダル */
-        #word-modal {
-            display: none;
-            position: fixed;
-            z-index: 2001;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            backdrop-filter: blur(8px);
-            background-color: var(--modal-bg-light);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        #word-modal.show {
-            opacity: 1;
-        }
-
-        #word-modal-content {
-            background-color: var(--bg-color);
-            margin: 20% auto;
-            padding: 20px;
-            border-radius: 12px;
-            width: 85%;
-            max-width: 500px;
-            text-align: center;
-            color: var(--text-color);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        #word-input {
-            width: 80%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            background-color: var(--bg-color);
-            color: var(--text-color);
-        }
-
-        #word-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 15px;
-        }
-
-        .word-button {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 50%;
-            background-color: var(--button-bg-color);
-            color: var(--text-color);
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-        .word-button:hover {
-            transform: scale(1.1);
-        }
-
-        @media (max-width: 600px) {
-            #word-buttons {
-                gap: 6px;
-            }
-
-            .word-button {
-                padding: 6px 10px;
-                font-size: 14px;
-            }
-        }
-
+     
         .post a {
             color: var(--text-color);
             text-decoration: underline;
@@ -355,13 +282,7 @@
             </div>
         </div>
     </div>
-    <!-- ワード追加モーダル -->
-    <div id="word-modal" class="modal">
-        <div id="word-modal-content" class="modal-content">
-            <input type="text" id="word-input" placeholder="よく使うワードを入力" autocomplete="off">
-            <div id="word-buttons"></div>
-        </div>
-    </div>
+
     <script>
         const lightPastelColors = [
             '#FFD1DC', '#FFE4B5', '#E6E6FA', '#B5EAD7', '#FFB6C1',
@@ -420,14 +341,8 @@
         const sendTodayPostsBtn = document.getElementById('sendTodayPostsBtn');
         const postCountElement = document.getElementById('post-count');
 
-        // ワードモーダル関連
-        const wordModal = document.getElementById('word-modal');
-        const wordInput = document.getElementById('word-input');
-        const wordButtonsContainer = document.getElementById('word-buttons');
-
         let allPosts = [];
         let isPosting = false;
-        let freqWords = [];
         let isSearchMode = false;
 
 
@@ -656,43 +571,6 @@
             }
         }
 
-        // ワード一覧取得
-        async function fetchFreqWords() {
-            const res = await fetch('/freq_words');
-            freqWords = await res.json();
-            renderWordButtons();
-        }
-
-        // ワードボタン描画
-        function renderWordButtons() {
-            wordButtonsContainer.innerHTML = freqWords.map(word =>
-                `<button class="word-button" onclick="postWord('${word.word}')">${word.word}</button>`
-            ).join('');
-        }
-
-        // ワード投稿
-        async function postWord(word) {
-            await fetch('/post', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: word }),
-            });
-            wordModal.classList.remove('show');
-            wordModal.style.display = 'none';
-            location.reload();
-        }
-
-        // ワード追加
-        async function addFreqWord(word) {
-            await fetch('/freq_words', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ word }),
-            });
-            wordInput.value = '';
-            await fetchFreqWords();
-        }
-
         // イベントリスナー
         document.addEventListener('contextmenu', (e) => {
             e.preventDefault();
@@ -742,34 +620,6 @@
             }
         });
 
-
-        wordInput.addEventListener('keydown', async (e) => {
-            if (e.key === 'Enter' && wordInput.value.trim()) {
-                await addFreqWord(wordInput.value.trim());
-            }
-        });
-
-        document.body.addEventListener('click', (e) => {
-            if (e.target === wordModal) {
-                wordModal.classList.remove('show');
-                wordModal.style.display = 'none';
-            }
-        });
-
-        input.addEventListener('dblclick', async (e) => {
-            e.preventDefault();
-            wordModal.classList.add('show');
-            wordModal.style.display = 'block';
-            wordInput.focus();
-            fetchFreqWords();
-        });
-
-        wordModal.addEventListener('click', (e) => {
-            if (e.target === wordModal) {
-                wordModal.classList.remove('show');
-                wordModal.style.display = 'none';
-            }
-        });
 
         // postsList のクリックイベントハンドラを修正
         postsList.addEventListener('click', async (e) => {
