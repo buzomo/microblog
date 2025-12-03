@@ -231,7 +231,7 @@
             }
         }
 
-     
+
         .post a {
             color: var(--text-color);
             text-decoration: underline;
@@ -471,14 +471,18 @@
         }
 
         // 投稿送信
+        // 投稿送信
         async function postContent(content) {
             await fetch('/post', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content }),
             });
+            window.location.href = window.location.origin + window.location.pathname;
             if (!postOnlyMode) await fetchAllPosts();
+            // 投稿後にURLパラメータを消す
         }
+
 
         // URL表示
         function showUrlWithToken() {
