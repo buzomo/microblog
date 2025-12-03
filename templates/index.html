@@ -401,7 +401,7 @@
                     ? `<a href="${post.content}" target="_blank" class="post-thumbnail-link" data-encoded-url="${post.content}">
                        <img src="${getThumbnailUrl(post.content)}" alt="サムネイル" class="post-thumbnail" onerror="this.style.display='none'; this.parentNode.innerHTML='${post.content}';">
                    </a>`
-                    : decodeURI(content);
+                    : decodeURI(post.content);
                 return `
                 <li class="post ${post.is_highlight ? 'highlight' : ''}"
                     data-time="${new Date(post.created_at).toLocaleString()}"
