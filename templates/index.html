@@ -399,9 +399,9 @@
             postsList.innerHTML = posts.map(post => {
                 const content = post.content.startsWith('http://') || post.content.startsWith('https://')
                     ? `<a href="${post.content}" target="_blank" class="post-thumbnail-link" data-encoded-url="${post.content}">
-                       <img src="${getThumbnailUrl(post.content)}" alt="サムネイル" class="post-thumbnail" onerror="this.style.display='none'; this.parentNode.innerHTML='${post.content}';">
+                       <img src="${getThumbnailUrl(post.content)}" alt="サムネイル" class="post-thumbnail" onerror="this.style.display='none'; this.parentNode.innerHTML='${encodeURIComponent(post.content)}';">
                    </a>`
-                    : decodeURI(post.content);
+                    : post.content;
                 return `
                 <li class="post ${post.is_highlight ? 'highlight' : ''}"
                     data-time="${new Date(post.created_at).toLocaleString()}"
