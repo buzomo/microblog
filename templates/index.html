@@ -399,7 +399,7 @@
             postsList.innerHTML = posts.map(post => {
                 const content = post.content.startsWith('http://') || post.content.startsWith('https://')
                     ? `<a href="${post.content}" target="_blank" class="post-thumbnail-link" data-encoded-url="${post.content}">
-                       <img src="${getThumbnailUrl(post.content)}" alt="サムネイル" class="post-thumbnail" onerror="this.style.display='none'; this.parentNode.innerHTML='${decodeURI(post.content)}';">
+                       <img src="${getThumbnailUrl(post.content)}" alt="サムネイル" class="post-thumbnail" onerror="this.style.display='none'; this.parentNode.innerHTML='${post.content}';">
                    </a>`
                     : post.content;
                 return `
