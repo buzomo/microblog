@@ -402,32 +402,34 @@
             updatePostCount();
         }
 
-        // ハッシュタグをリンクに変換する関数
         function linkifyHashtags(text) {
             return text.replace(/#(\w+)/g, '<span class="post-hashtag" onclick="inputHashtag(\'$1\')">#$1</span>');
         }
-
         // ハッシュタグをinputに代入してfilterPostsを実行
         function inputHashtag(hashtag) {
-            input.value = hashtag;
-            filterPosts(hashtag);
+            input.value = '#' + hashtag;
+            filterPosts('#' + hashtag);
         }
 
-        // 投稿表示関数を修正（ハッシュタグとサムネイル対応）
         function renderPosts(posts) {
             postsList.innerHTML = posts.map(post => {
-                const content = post.content.includes('http://') || post.content.includes('https://')
-                    ? post.content.replace(/((https?:\/\/[^\s]+))/g, '<a href="$1" target="_blank" class="post-thumbnail-link" data-encoded-url="$1"><img src="' + getThumbnailUrl('$1') + '" alt="サムネイル" class="post-thumbnail" onerror="this.style.display=\'none\'; this.parentNode.innerHTML=\'$1\';"></a>')
-                    : post.content;
-                const linkedContent = linkifyHashtags(content);
+                // 1. まずURLをサムネイルリンクに置換
+                let content = post.content;
+                content = content.replace(/((https?:\/\/[^\s]+))/g, (match, url) => {
+                    return `<a href="${url}" target="_blank" class="post-thumbnail-link" data-encoded-url="${url}">
+                <img src="${getThumbnailUrl(url)}" alt="サムネイル" class="post-thumbnail" onerror="this.style.display='none'; this.parentNode.innerHTML='${url}';">
+            </a>`;
+                });
+                // 2. ハッシュタグをリンクに置換
+                content = linkifyHashtags(content);
                 return `
-                    <li class="post ${post.is_highlight ? 'highlight' : ''}"
-                        data-time="${new Date(post.created_at).toLocaleString()}"
-                        data-id="${post.id}"
-                        style="${post.is_highlight ? `background-color: ${post.highlight_color || ''};` : ''}">
-                        ${linkedContent}
-                    </li>
-                `;
+            <li class="post ${post.is_highlight ? 'highlight' : ''}"
+                data-time="${new Date(post.created_at).toLocaleString()}"
+                data-id="${post.id}"
+                style="${post.is_highlight ? `background-color: ${post.highlight_color || ''};` : ''}">
+                ${content}
+            </li>
+        `;
             }).join('');
             document.querySelectorAll('.post.highlight').forEach(el => {
                 applyHighlightColor(el, true);
